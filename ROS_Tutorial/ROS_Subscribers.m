@@ -67,3 +67,7 @@ end
 %% Stop the subcription to pose message
 
 clear robotpose
+
+%% Shutdown ROS nodes
+
+rosshutdown
