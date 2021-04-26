@@ -1,0 +1,22 @@
+<?xml version='1.0' encoding="utf-8"?>
+
+<toc version="2.0">
+<!-- First tocitem specifies top level in Help browser Contents pane -->
+<!-- This can be a roadmap page, as shown below, or a content page -->
+    <tocitem target="GettingStarted.html">Icons
+        <!-- FUNCTION, USER_GUIDE, EXAMPLES, BLOCK, GETTING_STARTED, -->
+        <!-- DEMOS, RELEASE_NOTES --> 
+        <tocitem target="GettingStarted.html" image="HelpIcon.GETTING_STARTED">
+            Icons (Getting Started)
+        </tocitem>
+        <tocitem target="CLI.html" image="HelpIcon.FUNCTION">
+            Command-line interface
+        </tocitem>
+        <tocitem target="AddIcons.html" image="HelpIcon.FUNCTION">
+            Adding new icons to library
+        </tocitem>
+        <tocitem target="matlab:web('https://roslovets.github.io')" image="HelpIcon.FUNCTION">
+            Check out other projects
+        </tocitem>
+    </tocitem>
+</toc>
