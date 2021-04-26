@@ -1,3 +1,5 @@
+%% This file should help w/ understanding ROS subscribers w/ MATLAB
+
 %% Housekeeping
 
 clc
