@@ -10,7 +10,6 @@ classdef Sensor < handle
 properties
 %% Properties Relating to Human Detection
 humanSub % Subscriber to camera node
-humanPub % Publishes true/false info on human detection
 faceDetector % Face detector object
 faceDetectorTimer % Timer control for face detection
 
@@ -50,9 +49,6 @@ function initialiseHumanDetection(obj,rate, cameraNode)
     obj.faceDetectorTimer= timer('Period', 1/rate, 'ExecutionMode','fixedRate');
     obj.faceDetectorTimer.TimerFcn =  @(~, ~) obj.detectFaces;
     
-    % Create publisher
-    obj.humanPub = rospublisher('/sensor/human','std_msgs/Bool','DataFormat','struct');
-
     % Start timer
     start(obj.faceDetectorTimer);
 end
@@ -71,15 +67,11 @@ function detectFaces(obj)
     msg = obj.humanSub.receive(10);
     img = readImage(msg);
     loc = step(obj.faceDetector, img);
-    outMsg = rosmessage(obj.humanPub);
-    
     if isempty(loc)
-        outMsg.data = false;
+        display('Safe');
     else
-        outMsg.data = true;
+        display('DANGER');
     end
-    
-    send(obj.humanPub,outMsg);
 end
 %% Crack Detection Initialisation
 
@@ -154,13 +146,14 @@ function data = detectCracks(obj)
     bw(C == "Crack") = 1;
     bw(C == "NoCrack") = 0;
     
-    % Binarize and find skeletons of cracks. Still need to remove branches
+    % Binarize and find skeletons of cracks. S
     bw = imbinarize(bw);
     skelImage = bwskel(bw, 'MinBranchLength', 10);
     
-    % Plots the detected cracks
     [l1,l2] = bwlabel(skelImage);
+
     cData = {};
+
     for i =1:l2
         subplot(ceil((l2+1)/2),ceil((l2+1)/2),i+1)
         r1 = skelImage;
@@ -171,7 +164,7 @@ function data = detectCracks(obj)
         cData{i} = [x,y];
         pbaspect([2,1,1])
     end
-    
+
     subplot(ceil((l2+1)/2),ceil((l2+1)/2),1)
     imshow(bwmorph(skelImage,'thicken',2));
     title('Detected Cracks');
@@ -179,7 +172,6 @@ function data = detectCracks(obj)
             
 end
 %% Object Destructor
-
 function delete(obj)
     try
         obj.faceDetectorTimer.stop();
