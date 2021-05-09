@@ -17,20 +17,31 @@ faceDetectorTimer % Timer control for face detection
 %% Properties Relating to Crack Detection
 cameraSub % 
 cameraPub
+cameraPubName
+sim
+
 end    
 
 methods
 %% Object Constructor
 
-function obj = Sensor()
+function obj = Sensor(RGBDSource, Sim)
 %SENSOR Construct an instance of this class
 %   Does nothing but construct the object at the moment, could add in
 %   initialisation here or some toggles for features like monitoring for
 %   humans
+
+    % simulation or not
+    
+    % sub names
+    obj.cameraPubName = RGBDSource;
+    
+    % pub names
+    obj.sim = Sim;
 end
 %% Initialise Human Detection
 
-function initialiseHumanDetection(obj,rate, cameraNode)
+function initialiseHumanDetection(obj,rate, cameraNode, pubName, displayFace)
 %INITIALISEHUMANDETECTION
 %   Creates the face detection object, and sets up the subscriber to the
 %   camera node. Then creates a timer, with a fixedRate mode of operation
@@ -43,30 +54,27 @@ function initialiseHumanDetection(obj,rate, cameraNode)
     obj.faceDetector = vision.CascadeObjectDetector();
     obj.humanSub = rossubscriber(cameraNode);
     
-    % cameraNode = '/usb_cam/image_raw/compressed' 
-
     % Initialise timer with given rate and set callback function to
     % detectFaces
     obj.faceDetectorTimer= timer('Period', 1/rate, 'ExecutionMode','fixedRate');
-    obj.faceDetectorTimer.TimerFcn =  @(~, ~) obj.detectFaces;
+    obj.faceDetectorTimer.TimerFcn =  {@obj.detectFaces, displayFace};
     
     % Create publisher
-    obj.humanPub = rospublisher('/sensor/human','std_msgs/Bool','DataFormat','struct');
+    obj.humanPub = rospublisher(pubName,'std_msgs/Bool','DataFormat','struct');
 
     % Start timer
     start(obj.faceDetectorTimer);
 end
 %% Face Detection Callback Function  
 
-function detectFaces(obj)
+function detectFaces(obj,~, ~, display)
 %DETECTFACES Detects faces from camera footage
 %   Function that detects faces using camera footage from the specified
 %   node saved in the humanSub property. Uses a faceDetection object saved
 %   in the faceDetector property. Is only called through a timer and should
-%   not be directly called by humans. Currently does not output anything,
-%   but displays "Safe" or "DANGER" depending on whether there is a human
-%   present in the workspace. This should be rectified to publish a true or
-%   false which can be accessed and interpreted by the CORE class. 
+%   not be directly called by humans. Currently publishes a true/false
+%   to the /sensor/human topic indicating if a human has been detected or
+%   not. 
 
     msg = obj.humanSub.receive(10);
     img = readImage(msg);
@@ -80,7 +88,26 @@ function detectFaces(obj)
     end
     
     send(obj.humanPub,outMsg);
+    
+    if display
+        img = insertShape(img, 'Rectangle', loc);
+        imshow(img);
+    end 
+    
 end
+%% Deactivate Human Detection
+
+function deactivateHumanDetection(obj)
+%DEACTIVATEHUMANDETECTION Stops face detection process
+%   Stops face detection process by deleting the timer triggering the
+%   detection callback
+
+    try
+        obj.faceDetectorTimer.stop();
+    catch
+        disp('Could not shutdown face detection routine, check timer still exists')
+    end
+end 
 %% Crack Detection Initialisation
 
 function setupCamera(obj)
@@ -89,12 +116,12 @@ function setupCamera(obj)
 %   Creates a publisher to simulate input from an RGB-D camera. Needs to be
 %   edited to easily switch between simulated and real input
 
-    nodeName = '/rgbd';
+    nodeName = obj.cameraPubName;
     obj.cameraPub = rospublisher(nodeName,'sensor_msgs/PointCloud2','DataFormat','struct');
 end
 %% RGB-D Data Request Function
 
-function requestRGBD(obj)    
+function requestRGBD(obj)
 % REQUESTRGBD Function that emulates service calls from ROS.
 %   When called, currently loads data from a .mat file containing RGB-D
 %   data and publishes it via cameraPub. Only works for simulated input
@@ -115,17 +142,16 @@ function requestRGBD(obj)
 end
 %% Crack Detection Function
 
-function data = detectCracks(obj)
+function cData = detectCracks(obj, displayCracks)
 % DETECTCRACKS Uses a neural network to detect cracks
 %   Currently performs image segmentation using a resnet trained via
 %   transfer learning on a dataset of cracks. Once the image is segmented
 %   into crack & not crack, the morphological function library is used to
 %   'skeletonize' the crack regions and determine the centre path of the
 %   crack. Each crack region is the split and xyz coordinates along the
-%   path determined. Currently nothing is returned, this will be rectified
-%   when access to RGB-D camera is possible. 
+%   path determined.
             
-    dataRead = rossubscriber('/rgbd'); %change this to use variable for sub name
+    dataRead = rossubscriber(obj.cameraPubName); 
     obj.requestRGBD;
     data = receive(dataRead,10); %change timeout time to be variable
     
@@ -162,21 +188,16 @@ function data = detectCracks(obj)
     [l1,l2] = bwlabel(skelImage);
     cData = {};
     for i =1:l2
-        subplot(ceil((l2+1)/2),ceil((l2+1)/2),i+1)
         r1 = skelImage;
         r1(l1 ~= i) = 0;
-        imshow(bwmorph(r1,'thicken',2));
-        title("Crack Branch " + num2str(i))
-        [x,y] = find(r1);
-        cData{i} = [x,y];
-        pbaspect([2,1,1])
+        if displayCracks
+            subplot(ceil((l2)/2),ceil((l2)/2),i)
+            imshow(r1);
+            title("Crack Branch " + num2str(i))       
+        end 
+        cData{i} = xyz(r1,:);
     end
-    
-    subplot(ceil((l2+1)/2),ceil((l2+1)/2),1)
-    imshow(bwmorph(skelImage,'thicken',2));
-    title('Detected Cracks');
-    pbaspect([2,1,1])
-            
+           
 end
 %% Object Destructor
 
