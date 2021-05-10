@@ -25,19 +25,17 @@ end
 methods
 %% Object Constructor
 
-function obj = Sensor(RGBDSource, Sim)
+function obj = Sensor(Sim)
 %SENSOR Construct an instance of this class
 %   Does nothing but construct the object at the moment, could add in
 %   initialisation here or some toggles for features like monitoring for
 %   humans
 
-    % simulation or not
-    
-    % sub names
-    obj.cameraPubName = RGBDSource;
-    
-    % pub names
-    obj.sim = Sim;
+% Kinect pub = /camera/depth_registered/points
+% Kinect launch = roslaunch freenect_launch freenect.launch depth_registration:=true
+
+obj.sim = Sim;
+
 end
 %% Initialise Human Detection
 
@@ -110,14 +108,15 @@ function deactivateHumanDetection(obj)
 end 
 %% Crack Detection Initialisation
 
-function setupCamera(obj)
+function setupCamera(obj, nodeName)
 % SETUPCAMERA Sets up a fake camera publisher to replicate input from an
 % RGB-D camera
 %   Creates a publisher to simulate input from an RGB-D camera. Needs to be
 %   edited to easily switch between simulated and real input
-
-    nodeName = obj.cameraPubName;
+    obj.cameraPubName = nodeName
     obj.cameraPub = rospublisher(nodeName,'sensor_msgs/PointCloud2','DataFormat','struct');
+    obj.cameraSub = rossubscriber(nodeName);
+    
 end
 %% RGB-D Data Request Function
 
@@ -126,10 +125,9 @@ function requestRGBD(obj)
 %   When called, currently loads data from a .mat file containing RGB-D
 %   data and publishes it via cameraPub. Only works for simulated input
 %   right now. Will be revised when access to RGB-D camera is possible. 
-   
+
     ptcloud2 = load('ptcloud2');
     ptcloud2 = ptcloud2.ptcloud2;
-   
     msg = rosmessage(obj.cameraPub);
     msg.width = uint32(448);
     msg.height = uint32(448);
@@ -140,6 +138,7 @@ function requestRGBD(obj)
 
     send(obj.cameraPub,msg);
 end
+
 %% Crack Detection Function
 
 function cData = detectCracks(obj, displayCracks)
@@ -150,24 +149,30 @@ function cData = detectCracks(obj, displayCracks)
 %   'skeletonize' the crack regions and determine the centre path of the
 %   crack. Each crack region is the split and xyz coordinates along the
 %   path determined.
-            
-    dataRead = rossubscriber(obj.cameraPubName); 
-    obj.requestRGBD;
-    data = receive(dataRead,10); %change timeout time to be variable
+          
+    if obj.sim
+        dataRead = rossubscriber(obj.cameraPubName); 
+        obj.requestRGBD;
+        data = receive(dataRead,10); %change timeout time to be variable
+    else
+        data = receive(obj.cameraSub,10); %change timeout time to be variable
+    end 
     
     % This bit here is dumb, accessing the saved point cloud message to get
     % field names
     ptCloud = data;
     ptcloud2 = load('ptcloud2');
     ptcloud2 = ptcloud2.ptcloud2;
-    ptCloud.Fields = ptcloud2.Fields;
-
+    if obj.sim
+        ptCloud.Fields = ptcloud2.Fields;
+    end 
+ 
     % Reads the xyz and RGB data from the cloud
     xyz = readXYZ(ptCloud);
     rgb = readRGB(ptCloud);
 
     % Shapes back into an image & converts to correct data type
-    img = reshape(rgb,448,448,3);
+    img = reshape(rgb,data.Width, data.Height,3);
     img = uint8(img*255);
     
     % Load the saved network
@@ -176,7 +181,7 @@ function cData = detectCracks(obj, displayCracks)
 
     % Perform semantic segmentation to locate cracks
     C = semanticseg(img,net);
-    bw = ones(448,448);
+    bw = ones(data.Width,data.Height);
     bw(C == "Crack") = 1;
     bw(C == "NoCrack") = 0;
     
@@ -191,12 +196,26 @@ function cData = detectCracks(obj, displayCracks)
         r1 = skelImage;
         r1(l1 ~= i) = 0;
         if displayCracks
-            subplot(ceil((l2)/2),ceil((l2)/2),i)
+            subplot(2,ceil((l2)/2),i)
             imshow(r1);
             title("Crack Branch " + num2str(i))       
         end 
         cData{i} = xyz(r1,:);
     end
+    
+   figure()
+   overlay = rgb2gray(img);
+   overlay(skelImage) = 255;
+   imshow(overlay)
+   
+%    figure()
+%    scatter3(cData{2}
+   
+%    crk = ismember(xyz,cData{2},'rows');
+%    crk = find(crk);
+%    crkcol = rgb(crk);
+%    scatter3(xyz(crk,1), xyz(crk,2), xyz(crk,3),1, crkcol);
+   
            
 end
 %% Object Destructor
