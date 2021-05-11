@@ -72,26 +72,27 @@ currJointState = [currJointState(3:-1:1),currJointState(4:6)];
 %%
 UR3 = A2_UR3(false);
 
-%  point = [];
-%  
-%  point{1} = currJointState;
-%  point{2} = UR3.model.ikcon(transl([-0.3 -0.1 0.3])*trotx(deg2rad(180)));%deg2rad([-69.94 0.2 -51.91 -156.85 -130.30 348.60]);
-%  point{3} = UR3.model.ikcon(transl([-0.3 -0.11 0.3])*trotx(deg2rad(180)));%deg2rad([-69.94 17.46 -65.26 -160.72 -130.26 348.65]);
-%  point{4} = UR3.model.ikcon(transl([-0.3 -0.12 0.3])*trotx(deg2rad(180)));%deg2rad([-94.23 24.02 -92.18 -134.32 -108.22 0.57]);
-%  point{5} = UR3.model.ikcon(transl([-0.3 -0.13 0.3])*trotx(deg2rad(180)));%deg2rad([-111.82 1.58 -80.34 -123.47 -92.05 7.45]);
-%  qMat = [];
-% 
-%  for i = 1:5
-%     qMat = [qMat;point{i}];
-% end
-% numPos = size(point);
-[qMatrix, velocityMatrix, timeMatrix ] = ...
-    execRMRC(currJointState,[-0.3 -0.1 0.3],20,1,0.1);
+  point = [];
+  
+  point{1} = currJointState;
+  point{2} = UR3.model.ikcon(transl([-0.3 -0.1 0.3])*trotx(deg2rad(180)));   %deg2rad([-69.94 0.2 -51.91 -156.85 -130.30 348.60]);
+  point{3} = UR3.model.ikcon(transl([-0.3 -0.11 0.2])*trotx(deg2rad(180)));  %deg2rad([-69.94 17.46 -65.26 -160.72 -130.26 348.65]);
+  point{4} = UR3.model.ikcon(transl([-0.3 -0.12 0.3])*trotx(deg2rad(180)));  %deg2rad([-94.23 24.02 -92.18 -134.32 -108.22 0.57]);
+  point{5} = UR3.model.ikcon(transl([-0.3 -0.13 0.2])*trotx(deg2rad(180)));  %deg2rad([-111.82 1.58 -80.34 -123.47 -92.05 7.45]);
+  qMat = [];
+ 
+  for i = 1:5
+     qMat = [qMat;point{i}];
+ end
+ numPos = size(point);
+ 
+%[qMatrix, velocityMatrix, timeMatrix ] = ...
+    %execRMRC(currJointState,[-0.3 -0.1 0.3],20,1,0.1);
 
-vMatrix = velocityMatrix;
-tMatrix = timeMatrix;
+%vMatrix = velocityMatrix;
+%tMatrix = timeMatrix;
 %%
-Simple_Movement(qMatrix, client, goal, jointStateSubscriber, 20);
+Simple_Movement(qMat, client, goal, jointStateSubscriber, 20);
 
 % ctr = 1;
 % 

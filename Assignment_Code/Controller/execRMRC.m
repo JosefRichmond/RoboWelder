@@ -1,4 +1,4 @@
-function [qMatrix,velocityMatrix,timeMatrix] = execRMRC(currentState,endPos,duration,deltaT,epsilon)
+function [qMatrix] = execRMRC(currentState,endPos,duration,deltaT,epsilon)
 % "execRMRC" is used to calculate the relevant RMRC data to then develop
 % the correct trajectory movement of the UR3.Key values are outputted
 %--------------------------------------------------------------------------
@@ -83,8 +83,5 @@ function [qMatrix,velocityMatrix,timeMatrix] = execRMRC(currentState,endPos,dura
         %angleError(:,i) = deltaTheta;                                      % For plotting
     end
     
-    velocityMatrix = qdot(:,:);
-    
-    timeMatrix = 1; %set this to increment steps
 end
 
