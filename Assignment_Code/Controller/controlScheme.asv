@@ -33,8 +33,8 @@ myController = Controller(true, robot, planningScene);
 %% Control Options
 
 % Velocity and Control Frequency
-velocity = 0.1; % Desired velocity
-deltaT = 1; % Control rate
+velocity = 0.5; % Desired velocity
+deltaT = 0.2; % Control rate
 x = double.empty(0,3); 
 W = diag([1 1 1 0.7 0.7 0.7]);    % Weighting matrix for the velocity vector
 
@@ -47,7 +47,7 @@ P1 = [-0.3 -0.1 0.3];
 %% Get trial trajectory
 [p, thet] = linearTraj(P0, P1, 1, deltaT);
 
-qMatrix = RMRCTraj(p560,p, thet,  deltaT, epsilon, W, zeros(1,6));
+% qMatrix = RMRCTraj(p560,p, thet,  deltaT, epsilon, W, zeros(1,6));
 %% Check if collision, if so implement collision avoidance
 [collision,qInd] = IsCollision(robot.model, qMatrix,planningScene,false);
 if collision
