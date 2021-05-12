@@ -1,4 +1,4 @@
-classdef Sensor < handle
+classdef CustomSensor < handle
 %SENSOR Node that handles all sensing applications of the robot
 %   The Sensor class utilises input from an RGB-D camera to detect cracks
 %   and monitor the workspace for humans. If a human is detected, the
@@ -13,6 +13,7 @@ humanSub % Subscriber to camera node
 humanPub % Publishes true/false info on human detection
 faceDetector % Face detector object
 faceDetectorTimer % Timer control for face detection
+showFig
 
 %% Properties Relating to Crack Detection
 cameraSub % 
@@ -25,7 +26,7 @@ end
 methods
 %% Object Constructor
 
-function obj = Sensor(Sim)
+function obj = CustomSensor(Sim)
 %SENSOR Construct an instance of this class
 %   Does nothing but construct the object at the moment, could add in
 %   initialisation here or some toggles for features like monitoring for
@@ -58,10 +59,11 @@ function initialiseHumanDetection(obj,rate, cameraNode, pubName, displayFace)
     obj.faceDetectorTimer.TimerFcn =  {@obj.detectFaces, displayFace};
     
     % Create publisher
-    obj.humanPub = rospublisher(pubName,'std_msgs/Bool','DataFormat','struct');
+    obj.humanPub = rospublisher(pubName,'std_msgs/String','DataFormat','struct');
 
     % Start timer
     start(obj.faceDetectorTimer);
+    
 end
 %% Face Detection Callback Function  
 
@@ -73,23 +75,31 @@ function detectFaces(obj,~, ~, display)
 %   not be directly called by humans. Currently publishes a true/false
 %   to the /sensor/human topic indicating if a human has been detected or
 %   not. 
-
+   
     msg = obj.humanSub.receive(10);
     img = readImage(msg);
     loc = step(obj.faceDetector, img);
     outMsg = rosmessage(obj.humanPub);
     
     if isempty(loc)
-        outMsg.data = false;
+        outMsg.data = 'false';
     else
-        outMsg.data = true;
+        outMsg.data = 'true';
     end
     
     send(obj.humanPub,outMsg);
     
     if display
-        img = insertShape(img, 'Rectangle', loc);
+        
+        if isempty(obj.showFig)
+        figure()
         imshow(img);
+        obj.showFig = axes;
+        end 
+        
+        img = insertShape(img, 'Rectangle', loc);
+        imshow(img, 'Parent' , obj.showFig);
+        
     end 
     
 end
@@ -102,6 +112,7 @@ function deactivateHumanDetection(obj)
 
     try
         obj.faceDetectorTimer.stop();
+        obj.showFig = [];
     catch
         disp('Could not shutdown face detection routine, check timer still exists')
     end
@@ -113,7 +124,7 @@ function setupCamera(obj, nodeName)
 % RGB-D camera
 %   Creates a publisher to simulate input from an RGB-D camera. Needs to be
 %   edited to easily switch between simulated and real input
-    obj.cameraPubName = nodeName
+    obj.cameraPubName = nodeName;
     obj.cameraPub = rospublisher(nodeName,'sensor_msgs/PointCloud2','DataFormat','struct');
     obj.cameraSub = rossubscriber(nodeName);
     
@@ -138,7 +149,6 @@ function requestRGBD(obj)
 
     send(obj.cameraPub,msg);
 end
-
 %% Crack Detection Function
 
 function cData = detectCracks(obj, displayCracks)
@@ -223,6 +233,7 @@ end
 function delete(obj)
     try
         obj.faceDetectorTimer.stop();
+        obj.showFig = [];
     catch
         disp('Could not shutdown timer')
     end
