@@ -127,9 +127,7 @@ function setupCamera(obj, nodeName)
 %   Creates a publisher to simulate input from an RGB-D camera. Needs to be
 %   edited to easily switch between simulated and real input
     obj.cameraPubName = nodeName;
-    obj.cameraPub = rospublisher(nodeName,'sensor_msgs/PointCloud2','DataFormat','struct');
-    obj.cameraSub = rossubscriber(nodeName);
-    
+    obj.cameraSub = rossubscriber(nodeName);  
 end
 
 %% Crack Detection Function
@@ -185,7 +183,6 @@ function cData = detectCracks(obj, displayCracks)
     overlay(skelImage) = 255;
     imshow(overlay)
  
-
     xs = xyz(:,1);
     ys = xyz(:,2);
 
@@ -197,18 +194,25 @@ function cData = detectCracks(obj, displayCracks)
     rotpostrim = cellfun(@(rotposl) rotposl(1:3,4)',rotpos,'un',0);
     rotpostrimmat = cell2mat(rotpostrim);
     
-%     figure()
+    if obj.sim
+        rotpostrimmat = rotpostrimmat + [0.2,-0.5,-0.1];
+    end 
+    
+    figure()
     for i =1:l2
         r1 = skelImage;
         r1(l1 ~= i) = 0;
+        eP = bwmorph(r1,'endpoints');
         rgb(r1,:) = repmat([1, 0, 0],  length(rgb(r1,:)), 1);
         if displayCracks
-%             subplot(2,ceil((l2)/2),i)
-%             imshow(r1);
+            subplot(2,ceil((l2)/2),i)
+            imshow(r1);
             title("Crack Branch " + num2str(i))
         end 
-        cData{i} = rotpostrimmat(r1,:);
+        cData{i} = rotpostrimmat(eP,:);
     end
+    
+    
     
     figure()
     robot = UR5;

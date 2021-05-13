@@ -2,7 +2,7 @@
 % <<<<<<< HEAD
 close all
 figure()
-robot = UR5;
+robot = A2_UR3;
 
 % Add obstacles
 
@@ -75,9 +75,10 @@ Controller.humanSafe = true;
 Core = WelderCore(true);
  
 myCore.initialiseRobot();
-
+%%
 myCore.initialiseEnvironment()
 
+%%
 myCore.initialiseSensor(true)
 
 myCore.initialiseController()

@@ -24,7 +24,8 @@ end
 
 %%
 function initialiseRobot(obj)
-    obj.Robot = UR5; 
+%     obj.Robot = UR5; 
+    obj.Robot = A2_UR3(false,true);
 end 
 
 %%

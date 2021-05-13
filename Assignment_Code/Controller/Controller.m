@@ -269,11 +269,18 @@ function startMovement(obj)
             %   Create timer that calls back to plot function at control
             %   rate and plots robot movements 
 %             obj.safe = true;
-            obj.trajState = 1;
-            if isempty(obj.moveTimer)
-                obj.moveTimer = timer('TimerFcn',{@obj.plotSim},'Period',0.02*10, 'ExecutionMode', 'fixedDelay');
-            end 
-            obj.moveTimer.start();
+
+    if ~obj.sim
+
+    % CODE FOR SENDING REAL GOES HERE
+
+    else
+        obj.trajState = 1;
+        if isempty(obj.moveTimer)
+            obj.moveTimer = timer('TimerFcn',{@obj.plotSim},'Period',0.02*10, 'ExecutionMode', 'fixedDelay');
+        end 
+        obj.moveTimer.start();
+    end 
 end 
 
 %% MOVE SIMULATED ROBOT
