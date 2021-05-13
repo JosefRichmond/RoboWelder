@@ -141,12 +141,12 @@ function cData = detectCracks(obj, displayCracks)
 %   crack. Each crack region is the split and xyz coordinates along the
 %   path determined.
           
-    if obj.sim
+%     if obj.sim
         bag = rosbag('2021-05-12-22-20-29.bag');
         data = bag.readMessages{1};
-    else
-        data = receive(obj.cameraSub,10); %change timeout time to be variable
-    end 
+%     else
+%         data = receive(obj.cameraSub,10); %change timeout time to be variable
+%     end 
     
     % This bit here is dumb, accessing the saved point cloud message to get
     % field names

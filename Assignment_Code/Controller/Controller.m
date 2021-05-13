@@ -49,7 +49,7 @@ function obj = Controller(Sim, robot,planningScene)
     obj.updatePlanningScene(planningScene);
     
     if ~Sim
-            [obj.client, obj.goal,obj.jointStateSubscriber, obj.jointNames] = obj.InitialiseReal(raspIP);
+            [obj.client, obj.goal,obj.jointStateSubscriber, obj.jointNames] = obj.InitialiseReal();
     end
     
 end
@@ -320,9 +320,9 @@ end
 end 
 
 %% MOVE REAL ROBOT FUNCTIONS
-function [client, goal,jointStateSubscriber, jointNames] = InitialiseReal(obj,raspIP)
+function [client, goal,jointStateSubscriber, jointNames] = InitialiseReal(obj)
     %Initialise ROS
-    rosinit(raspIP);
+    %rosinit(raspIP);
 
     % Initialise the Subscriber for Real Joint States
     jointStateSubscriber = rossubscriber('joint_states','sensor_msgs/JointState');
@@ -355,10 +355,10 @@ end
 function[goal] = createTransmission(obj,duration, goal)
     
     %Get current state and add to start of transmission
-    [currJointState] = getCurrentState(obj.jointStateSubscriber);
+    [currJointState] = obj.getCurrentState();
     jointSend = rosmessage('trajectory_msgs/JointTrajectoryPoint');
     jointSend.Positions = currJointState;
-    jointSend.TimeFromStart = 0.5;
+    jointSend.TimeFromStart = rosduration(0.5);
     goal.Trajectory.Points = [goal.Trajectory.Points];
     
     % Set time stamp for next position
@@ -387,7 +387,7 @@ function[goal] = createTransmission(obj,duration, goal)
 end
 
 %> TRANSMIT THE ACTION TO THE ROBOT
-function sendTransmission(client,goal)
+function sendTransmission(obj,client,goal)
     % Send the generated real trajectory (in "goal")
     sendGoal(client,goal);
     clear goal

@@ -72,7 +72,8 @@ myController.startMovement();
 %%
 Controller.humanSafe = true;
 %%
-Core = WelderCore(true);
+myCore = WelderCore(false);
+%% 
  
 myCore.initialiseRobot();
 %%
@@ -80,10 +81,14 @@ myCore.initialiseEnvironment()
 
 %%
 myCore.initialiseSensor(true)
+%% 
+
 
 myCore.initialiseController()
+%% 
 
 myCore.getTargets()
+%% 
 
 myCore.planTrajectory()
 %%
