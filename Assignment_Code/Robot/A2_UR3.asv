@@ -9,29 +9,31 @@ classdef A2_UR3 < handle
         %> Robot model
         model;
         
-        %>
+        %> Workspace dimensions
         workspace = [-2 2 -2 2 -0.3 2];   
         
         %> Flag to indicate if gripper is used
-        useGripper = false;        
+        useGripper = false;     
+        
+        %> Plot robot flag
+        plotRobot = false;
     end
     
-    methods%% Class for UR5 robot simulation
+    methods %% Class for UR5 robot simulation
 function self = A2_UR3(useGripper, plotRobot)
+    
     if nargin < 1
         useGripper = false;
+        plotRobot = false;
     end
-    self.useGripper = useGripper;
     
-%> Define the boundaries of the workspace
-
-        
-% robot = 
-self.GetUR3Robot();
-
-if plotRobot == true
-    self.PlotAndColourRobot();
-end
+    self.useGripper = useGripper;
+            
+    self.GetUR3Robot();
+    self.tool
+    if plotRobot == true
+        self.PlotAndColourRobot();
+    end
 
 end
 
@@ -57,21 +59,21 @@ end
 % Given a robot index, add the glyphs (vertices and faces) and
 % colour them in if data is available 
 function PlotAndColourRobot(self)%robot,workspace)
-    for linkIndex = 0:self.model.n
-        if self.useGripper && linkIndex == self.model.n
-            [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['UR3Link',num2str(linkIndex),'Gripper.ply'],'tri'); %#ok<AGROW>
-        else
-            [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['UR3Link',num2str(linkIndex),'.ply'],'tri'); %#ok<AGROW>
-        end
+    for linkIndex = 1:self.model.n
+
+        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['/home/reeceh/git/RoboWelder/PlyFiles/UR3Decimated/','UR3Link',num2str(linkIndex),'.ply'],'tri'); %#ok<AGROW>
         self.model.faces{linkIndex+1} = faceData;
         self.model.points{linkIndex+1} = vertexData;
+        
     end
 
     % Display robot
     self.model.plot3d(zeros(1,self.model.n),'noarrow','workspace',self.workspace);
+    
     if isempty(findobj(get(gca,'Children'),'Type','Light'))
         camlight
     end  
+    
     self.model.delay = 0;
 
     % Try to correctly colour the arm (if colours are in ply file data)

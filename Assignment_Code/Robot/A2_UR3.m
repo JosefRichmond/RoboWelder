@@ -30,7 +30,8 @@ function self = A2_UR3(useGripper, plotRobot)
     self.useGripper = useGripper;
             
     self.GetUR3Robot();
-
+    self.model.tool = transl(0,0.025,0.167)*trotx(deg2rad(-22));
+    
     if plotRobot == true
         self.PlotAndColourRobot();
     end
