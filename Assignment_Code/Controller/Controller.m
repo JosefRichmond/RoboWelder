@@ -59,9 +59,9 @@ function [qs, xs] = makeTrajectory(obj, points)
 % Control variables
 robot = obj.robot.model;
 planningScene = obj.planningScene;
-deltaT = 0.02;
+deltaT = 0.01;
 epsilon = 0.1;
-W = diag([1 1 1 0.5 0 0]); 
+W = diag([1 1 1 0.7 0 0]); 
 q0 = zeros(1,6);
 xs = double.empty(3,0); 
 qs = double.empty(0,6);
@@ -97,7 +97,7 @@ for ctr = 1:length(points(:,1))-1
                 
             q0 = qMatrix1(end,:);
             
-            [p2, thet2] = obj.linearTraj(Pt, P1, 1, deltaT);
+            [p2, thet2] = obj.linearTraj(Pt, P1, 0.5, deltaT);
             qMatrix2 = obj.RMRCTraj(robot,p2, thet2,  deltaT, epsilon, W, q0);
             [collision2,qInd] = obj.IsCollision(robot, qMatrix2,planningScene,true);
             
@@ -148,7 +148,7 @@ function [points, theta] = linearTraj(obj, P0, PF, velocity, deltaT)
 
     dist = norm(PF - P0); % Distance from A to B
     t = dist/velocity ; % Time from A to B given v and d
-    steps = ceil(t/deltaT); % Number of steps needed at given control rate
+    steps = 2*ceil(t/deltaT); % Number of steps needed at given control rate
 
     temp_x = (linspace(P0(1), PF(1), steps))';
     temp_y = (linspace(P0(2), PF(2),steps))';
@@ -271,19 +271,20 @@ function startMovement(obj)
 %             obj.safe = true;
             obj.trajState = 1;
             if isempty(obj.moveTimer)
-                obj.moveTimer = timer('TimerFcn',{@obj.plotSim, obj.robot.model, obj.plannedQ},'Period',0.02*10, 'ExecutionMode', 'fixedDelay');
+                obj.moveTimer = timer('TimerFcn',{@obj.plotSim},'Period',0.02*10, 'ExecutionMode', 'fixedDelay');
             end 
             obj.moveTimer.start();
 end 
 
 %% MOVE SIMULATED ROBOT
-function plotSim(obj, ~,~, robot, qMatrix)
-    
+function plotSim(obj, ~,~)
+robot = obj.robot.model;
+qMatrix = obj.plannedQ;
 if obj.humanSafe
 obj.trajState = obj.trajState + 1;
 
 if mod(obj.trajState,2) == 0
-robot.animate(qMatrix(obj.trajState,:));
+robot.animate(qMatrix(obj.trajState-1:obj.trajState,:));
 end 
 
 if obj.trajState > length(obj.plannedQ(:,1))

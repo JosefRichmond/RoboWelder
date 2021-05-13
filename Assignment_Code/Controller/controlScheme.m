@@ -1,14 +1,8 @@
 %% Load Robot
-<<<<<<< HEAD
+% <<<<<<< HEAD
 close all
 figure()
 robot = UR5;
-=======
-
-robot = A2_UR3(false);
->>>>>>> b2f31605f4a26975163fb0d813f7eabee4ae80ad
-p560 = robot.model;
-hold on
 
 % Add obstacles
 
@@ -52,13 +46,9 @@ myController.humanSafe = true;
 %% Control Options
 
 % Velocity and Control Frequency
-<<<<<<< HEAD
-velocity = 0.5; % Desired velocity
-deltaT = 0.5; % Control rate
-=======
+
 velocity = 0.1; % Desired velocity
 deltaT = 1; % Control rate
->>>>>>> b2f31605f4a26975163fb0d813f7eabee4ae80ad
 x = double.empty(0,3); 
 W = diag([1 1 1 0.7 0.7 0.7]);    % Weighting matrix for the velocity vector
 
@@ -80,9 +70,24 @@ myController.makeTrajectory(pS');
 %%
 myController.startMovement();
 %%
-myController.humanSafe = true;
+Controller.humanSafe = true;
 %%
+Core = WelderCore(true);
+ 
+myCore.initialiseRobot();
 
+myCore.initialiseEnvironment()
+
+myCore.initialiseSensor(true)
+
+myCore.initialiseController()
+
+myCore.getTargets()
+
+myCore.planTrajectory()
+%%
+myCore.runTrajectory()
+%%
 qMatrix = RMRCTraj(p560,p, thet,  deltaT, epsilon, W, zeros(1,6));
 %% Check if collision, if so implement collision avoidance
 [collision,qInd] = IsCollision(robot.model, qMatrix,planningScene,false);
