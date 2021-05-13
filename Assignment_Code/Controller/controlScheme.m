@@ -1,5 +1,6 @@
 %% Load Robot
-
+close all
+figure()
 robot = UR5;
 p560 = robot.model;
 hold on
@@ -10,7 +11,7 @@ hold on
 centerpnt = [0,0,-1.01];
 side = 2;
 plotOptions.plotFaces = true;
-[vertex,faces,faceNormals] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,plotOptions);
+[vertex,faces,faceNormals] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,[0,0,1],plotOptions);
 
 planningScene = {};
 planningScene{1}.vertex = vertex;
@@ -18,23 +19,36 @@ planningScene{1}.faces = faces;
 planningScene{1}.faceNormals = faceNormals; 
 
 % Adding a block in the way of the trajectory
-centerpnt = [0.3396,0.2304,0.12];
-side = 0.3;
-% [v1,v2,v3] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,plotOptions);
-% 
+% centerpnt = [0.38,0.1,0.05];
+% side = 0.1;
+% [v1,v2,v3] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,[1,0,0],plotOptions);
+
 % planningScene{2}.vertex = v1;
 % planningScene{2}.faces = v2;
 % planningScene{2}.faceNormals = v3;
+% 
+% % 
+centerpnt = [0,0.94,0.5];
+side = 1;
+[v1,v2,v3] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,[1,0,0],plotOptions);
 
+planningScene{2}.vertex = v1;
+planningScene{2}.faces = v2;
+planningScene{2}.faceNormals = v3;
+% 
 
 %%
 myController = Controller(true, robot, planningScene);
 
+myController.makeTrajectory(a(1:20:length(a),:));
+% myController.makeTrajectory([a(1,:); a(end,:)]);
+myController.startMovement()
+myController.humanSafe = true;
 %% Control Options
 
 % Velocity and Control Frequency
 velocity = 0.5; % Desired velocity
-deltaT = 0.2; % Control rate
+deltaT = 0.5; % Control rate
 x = double.empty(0,3); 
 W = diag([1 1 1 0.7 0.7 0.7]);    % Weighting matrix for the velocity vector
 
@@ -46,6 +60,18 @@ P1 = [0.208, 0.828,0.12];
 
 %% Get trial trajectory
 [p, thet] = linearTraj(P0, P1, 1, deltaT);
+% p2 = p(:, 2:end);
+p2 = fliplr(p);
+p2 = p2(:,2:end);
+
+pS = [p, p2]
+%% 
+myController.makeTrajectory(pS');
+%%
+myController.startMovement();
+%%
+myController.humanSafe = true;
+%%
 
 % qMatrix = RMRCTraj(p560,p, thet,  deltaT, epsilon, W, zeros(1,6));
 %% Check if collision, if so implement collision avoidance
@@ -79,8 +105,8 @@ if collision
             p = [p1,p2];
             qMatrix = [qMatrix1 ; qMatrix2];
             
-            plot3(p1(1,:),p1(2,:),p1(3,:),'r.','LineWidth',1)
-            plot3(p2(1,:),p2(2,:),p2(3,:),'b.','LineWidth',1)
+            plot3(p1(1,:),p1(2,:),p1(3,:),'r','LineWidth',1)
+            plot3(p2(1,:),p2(2,:),p2(3,:),'b','LineWidth',1)
 
         end 
     end 

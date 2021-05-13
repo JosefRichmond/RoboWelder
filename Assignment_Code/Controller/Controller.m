@@ -61,12 +61,16 @@ robot = obj.robot.model;
 planningScene = obj.planningScene;
 deltaT = 0.02;
 epsilon = 0.1;
-W = diag([1 1 1 0.7 0.7 0.7]); 
+W = diag([1 1 1 0.5 0 0]); 
 q0 = zeros(1,6);
 xs = double.empty(3,0); 
 qs = double.empty(0,6);
 xg = double.empty(3,0);
 qg = double.empty(0,6);
+% TF = ones(4,4);
+
+TF = transl(0,0,0);          % Create transformation of first point and angle
+
 for ctr = 1:length(points(:,1))-1
     P0 = points(ctr,:);
     P1 = points(ctr+1,:);
@@ -85,10 +89,10 @@ for ctr = 1:length(points(:,1))-1
                 qRand = (2 * rand(1,6) - 1) * pi;
             end
 
-            Pt = robot.fkine(qRand);
-            Pt = Pt(1:3,4)';
+            Pt0 = robot.fkine(qRand);
+            Pt = Pt0(1:3,4)';
             [p1, thet1] = obj.linearTraj(P0, Pt, 1, deltaT);
-            qMatrix1 = obj.RMRCTraj(robot,p1, thet1,  deltaT, epsilon, W,zeros(1,6));
+            qMatrix1 = obj.RMRCTraj(robot,p1, thet1,  deltaT, epsilon, W,qg(end,:));
             [collision1,qInd] = obj.IsCollision(robot, qMatrix1,planningScene,true);
                 
             q0 = qMatrix1(end,:);
@@ -107,12 +111,12 @@ for ctr = 1:length(points(:,1))-1
 
             if ~collision
                 
-                plot3(p(1,:),p(2,:),p(3,:),'k.','LineWidth',1)
+%                 plot3(p(1,:),p(2,:),p(3,:),'k.','LineWidth',1)
                 hold on
                 p = [p1,p2];
                 qMatrix = [qMatrix1 ; qMatrix2];
-                plot3(p1(1,:),p1(2,:),p1(3,:),'r.','LineWidth',1)
-                plot3(p2(1,:),p2(2,:),p2(3,:),'b.','LineWidth',1)
+%                 plot3(p1(1,:),p1(2,:),p1(3,:),'r','LineWidth',1)
+%                 plot3(p2(1,:),p2(2,:),p2(3,:),'b','LineWidth',1)
                
                 qs = [qs; qMatrix];
                 xs = [xs, p];
@@ -122,15 +126,21 @@ for ctr = 1:length(points(:,1))-1
     else
         qs = [qs; qMatrix];
         xs = [xs, p];
-        plot3(xs(1,:),xs(2,:),xs(3,:),'k.','LineWidth',1)
+%         plot3(xs(1,:),xs(2,:),xs(3,:),'k.','LineWidth',1)
         hold on
     end
+    
+    TF = robot.fkine(qMatrix(end,:));
 end 
 
 obj.plannedQ = qs;
 obj.goalQ = qg;
 obj.plannedPoints = xs;
 obj.goalPoints = xg; 
+
+plot3(xs(1,:),xs(2,:),xs(3,:),'g.','LineWidth',1)
+plot3(xg(1,:),xg(2,:),xg(3,:),'r','LineWidth',1)
+
 end
    
 %% MAKE LINEAR TRAJECTORY BETWEEN 2 POINTS
@@ -156,19 +166,22 @@ function [points, theta] = linearTraj(obj, P0, PF, velocity, deltaT)
     points = [temp_x, temp_y, temp_z]';
 
     theta = zeros(3,steps);
-    theta(2,:) = -pi/2;
+%     theta(3,:) = -pi/2;%-pi/2;
+%     theta(2,:) = pi;%-pi/2;
+    theta(1,:) = -pi/2;
 
 end 
     
 %% MAKE RMRC CONTROLLED QMATRIX GIVEN LINEAR TRAJECTORY
 function qMatrix =  RMRCTraj(obj,p560, x, theta, deltaT, epsilon, W, q0)
 steps = length(x(1,:));
+
 T = [rpy2r(theta(1,1),theta(2,1),theta(3,1)) x(:,1);zeros(1,3) 1];          % Create transformation of first point and angle
 % q0 = zeros(1,6);                                                            % Initial guess for joint angles
 qMatrix(1,:) = p560.ikcon(T,q0);  
-
+% TF = T;
 for i = 1:steps-2
-    T = p560.fkine(qMatrix(i,:));                                           % Get forward transformation at current joint state
+    T = p560.fkine(qMatrix(i,:));
     deltaX = x(:,i+1) - T(1:3,4);                                         	% Get position error from next waypoint
     Rd = rpy2r(theta(1,i+1),theta(2,i+1),theta(3,i+1));                     % Get next RPY angles, convert to rotation matrix
     Ra = T(1:3,1:3);                                                        % Current end-effector rotation matrix
@@ -214,7 +227,7 @@ result = false;
 qCol = 1;
 for qIndex = 1:size(qMatrix,1)
     % Get the transform of every joint (i.e. start and end of every link)
-    tr = GetLinkPoses(qMatrix(qIndex,:), robot);
+    tr = obj.GetLinkPoses(qMatrix(qIndex,:), robot);
     
     for ctr = 1:length(planningScene)
         vertex = planningScene{ctr}.vertex;
@@ -227,7 +240,7 @@ for qIndex = 1:size(qMatrix,1)
                 vertOnPlane = vertex(faces(faceIndex,1)',:);
                 [intersectP,check] = obj.LinePlaneIntersection(faceNormals(faceIndex,:),vertOnPlane,tr(1:3,4,i)',tr(1:3,4,i+1)'); 
                 if check == 1 && obj.IsIntersectionPointInsideTriangle(intersectP,vertex(faces(faceIndex,:)',:))
-                    plot3(intersectP(1),intersectP(2),intersectP(3),'g*');
+                    plot3(intersectP(1),intersectP(2),intersectP(3),'r*');
                     hold on 
 %                     display('Intersection');
                     result = true;
@@ -257,7 +270,9 @@ function startMovement(obj)
             %   rate and plots robot movements 
 %             obj.safe = true;
             obj.trajState = 1;
-            obj.moveTimer = timer('TimerFcn',{@obj.plotSim, obj.robot.model, obj.plannedQ},'Period',0.02, 'ExecutionMode', 'fixedDelay');
+            if isempty(obj.moveTimer)
+                obj.moveTimer = timer('TimerFcn',{@obj.plotSim, obj.robot.model, obj.plannedQ},'Period',0.02*10, 'ExecutionMode', 'fixedDelay');
+            end 
             obj.moveTimer.start();
 end 
 
@@ -274,9 +289,17 @@ end
 if obj.trajState > length(obj.plannedQ(:,1))
     obj.moveTimer.stop()
     display('Trajectory Completed')
+    obj.startMovement();
 end 
 
 end 
+end 
+
+%% Deactivate Sensor
+function stopMovement(obj)
+    try
+        obj.moveTimer.stop();
+    end 
 end 
 
 %% CONNECT TO HUMAN DETECTION

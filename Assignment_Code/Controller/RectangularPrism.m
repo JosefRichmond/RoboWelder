@@ -1,7 +1,7 @@
-function [vertex,face,faceNormals] = RectangularPrism(lower,upper,plotOptions,axis_h)
-if nargin<4
+function [vertex,face,faceNormals] = RectangularPrism(lower,upper, color, plotOptions,axis_h)
+if nargin<5
         axis_h=gca;
-    if nargin<3
+    if nargin<4
         plotOptions.plotVerts=false;
         plotOptions.plotEdges=true;
         plotOptions.plotFaces=true;
@@ -68,6 +68,7 @@ end
 %% If you want to plot the edges
 if isfield(plotOptions,'plotFaces') && plotOptions.plotFaces
     tcolor = [.2 .2 .8];
+    tcolor = color;
     
     patch('Faces',face,'Vertices',vertex,'FaceVertexCData',tcolor,'FaceColor','flat','lineStyle','none');
 end

@@ -33,6 +33,8 @@ function obj = CustomSensor(Sim)
 %   humans
 
 % Kinect pub = /camera/depth_registered/points
+% /usb_cam/image_raw/compressed
+
 % Kinect launch = roslaunch freenect_launch freenect.launch depth_registration:=true
 
 obj.sim = Sim;
@@ -129,26 +131,7 @@ function setupCamera(obj, nodeName)
     obj.cameraSub = rossubscriber(nodeName);
     
 end
-%% RGB-D Data Request Function
 
-function requestRGBD(obj)
-% REQUESTRGBD Function that emulates service calls from ROS.
-%   When called, currently loads data from a .mat file containing RGB-D
-%   data and publishes it via cameraPub. Only works for simulated input
-%   right now. Will be revised when access to RGB-D camera is possible. 
-
-    ptcloud2 = load('ptcloud2');
-    ptcloud2 = ptcloud2.ptcloud2;
-    msg = rosmessage(obj.cameraPub);
-    msg.width = uint32(448);
-    msg.height = uint32(448);
-    msg.point_step = ptcloud2.PointStep;
-    msg.row_step = ptcloud2.RowStep;
-    msg.data = ptcloud2.Data;
-    %msg.fields = struct(ptcloud2.Fields);
-
-    send(obj.cameraPub,msg);
-end
 %% Crack Detection Function
 
 function cData = detectCracks(obj, displayCracks)
@@ -161,9 +144,8 @@ function cData = detectCracks(obj, displayCracks)
 %   path determined.
           
     if obj.sim
-        dataRead = rossubscriber(obj.cameraPubName); 
-        obj.requestRGBD;
-        data = receive(dataRead,10); %change timeout time to be variable
+        bag = rosbag('2021-05-12-22-20-29.bag');
+        data = bag.readMessages{1};
     else
         data = receive(obj.cameraSub,10); %change timeout time to be variable
     end 
@@ -171,12 +153,7 @@ function cData = detectCracks(obj, displayCracks)
     % This bit here is dumb, accessing the saved point cloud message to get
     % field names
     ptCloud = data;
-    ptcloud2 = load('ptcloud2');
-    ptcloud2 = ptcloud2.ptcloud2;
-    if obj.sim
-        ptCloud.Fields = ptcloud2.Fields;
-    end 
- 
+
     % Reads the xyz and RGB data from the cloud
     xyz = readXYZ(ptCloud);
     rgb = readRGB(ptCloud);
@@ -202,32 +179,49 @@ function cData = detectCracks(obj, displayCracks)
     % Plots the detected cracks
     [l1,l2] = bwlabel(skelImage);
     cData = {};
+       
+    figure()
+    overlay = rgb2gray(img);
+    overlay(skelImage) = 255;
+    imshow(overlay)
+ 
+
+    xs = xyz(:,1);
+    ys = xyz(:,2);
+
+    zs = xyz(:,3);
+
+    pos = arrayfun(@transl, xs, ys, zs, 'UniformOutput', false);
+
+    rotpos = cellfun(@(p) trotx(-pi/2)*transl(0,-0.5,0)*p,pos,'un',0);
+    rotpostrim = cellfun(@(rotposl) rotposl(1:3,4)',rotpos,'un',0);
+    rotpostrimmat = cell2mat(rotpostrim);
+    
+%     figure()
     for i =1:l2
         r1 = skelImage;
         r1(l1 ~= i) = 0;
+        rgb(r1,:) = repmat([1, 0, 0],  length(rgb(r1,:)), 1);
         if displayCracks
-            subplot(2,ceil((l2)/2),i)
-            imshow(r1);
-            title("Crack Branch " + num2str(i))       
+%             subplot(2,ceil((l2)/2),i)
+%             imshow(r1);
+            title("Crack Branch " + num2str(i))
         end 
-        cData{i} = xyz(r1,:);
+        cData{i} = rotpostrimmat(r1,:);
     end
     
-   figure()
-   overlay = rgb2gray(img);
-   overlay(skelImage) = 255;
-   imshow(overlay)
-   
-%    figure()
-%    scatter3(cData{2}
-   
-%    crk = ismember(xyz,cData{2},'rows');
-%    crk = find(crk);
-%    crkcol = rgb(crk);
-%    scatter3(xyz(crk,1), xyz(crk,2), xyz(crk,3),1, crkcol);
-   
-           
+    figure()
+    robot = UR5;
+    robot.model.animate(deg2rad([-180,0,0,0,-180,0]))
+    hold on
+    trplot(transl(0,0,0))  
+    scatter3(rotpostrimmat(:,1),rotpostrimmat(:,2) ,rotpostrimmat(:,3)  , 1 , rgb);
+    
+
+    % Need to check cData for NaNs 
+
 end
+
 %% Object Destructor
 
 function delete(obj)
