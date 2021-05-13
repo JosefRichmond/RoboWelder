@@ -136,10 +136,11 @@ function PlotAndColourRobot(self)
 
     for linkIndex = 0:self.model.n
 
-        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['LinUR3Link',num2str(linkIndex),'.ply'],'tri'); %#ok<AGROW>
+        [ faceData, vertexData, plyData{linkIndex+1} ] = plyread(['/home/reeceh/git/RoboWelder/PlyFiles/UR3Decimated','UR3Link',num2str(linkIndex),'.ply'],'tri'); %#ok<AGROW>
         
         self.model.faces{linkIndex+1} = faceData;
         self.model.points{linkIndex+1} = vertexData;
+        
     end
 
     % Display robot
