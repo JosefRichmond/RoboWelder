@@ -18,8 +18,13 @@ function obj = WelderCore(sim)
     %   Detailed explanation goes here
     obj.sim = sim;
     try
-        rosinit
+        if sim
+            rosinit
+        else 
+            rosinit('192.168.0.253')
+        end 
     end 
+
 end
 
 %%
@@ -58,11 +63,11 @@ function initialiseEnvironment(obj, loadEnvironment)
     % 
 end
 %%
-function initialiseSensor(obj, display)
+function initialiseSensor(obj, sim, display)
     
-    obj.Sensor = CustomSensor(obj.sim);
+%     obj.Sensor = CustomSensor(sim);
     if obj.sim
-        obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
+    obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
     else
        obj.Sensor.initialiseHumanDetection(1, '/camera/depth_registered/points', '/Sensor/Human', display);
        obj.Sensor.setupCamera('/camera/depth_registered/points')
@@ -71,9 +76,9 @@ function initialiseSensor(obj, display)
 end
 
 %%
-function initialiseController(obj)
+function initialiseController(obj, sim)
     
-    obj.Controller = Controller(obj.sim, obj.Robot, obj.PlanningScene);
+    obj.Controller = Controller(sim, obj.Robot, obj.PlanningScene);
     
 end
 

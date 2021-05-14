@@ -49,7 +49,7 @@ function obj = Controller(Sim, robot,planningScene)
     obj.updatePlanningScene(planningScene);
     
     if ~Sim
-            [obj.client, obj.goal,obj.jointStateSubscriber, obj.jointNames] = obj.InitialiseReal(raspIP);
+            [obj.client, obj.goal,obj.jointStateSubscriber, obj.jointNames] = obj.InitialiseReal();
     end
     
 end
@@ -320,9 +320,9 @@ end
 end 
 
 %% MOVE REAL ROBOT FUNCTIONS
-function [client, goal,jointStateSubscriber, jointNames] = InitialiseReal(obj,raspIP)
+function [client, goal,jointStateSubscriber, jointNames] = InitialiseReal(obj)
     %Initialise ROS
-    rosinit(raspIP);
+    %rosinit(raspIP);
 
     % Initialise the Subscriber for Real Joint States
     jointStateSubscriber = rossubscriber('joint_states','sensor_msgs/JointState');
@@ -342,7 +342,7 @@ function [client, goal,jointStateSubscriber, jointNames] = InitialiseReal(obj,ra
 
 end
 
-%> COLLECT CURRENT STATE
+%% COLLECT CURRENT STATE
 function[currJointState] = getCurrentState(obj)
     % Pull current joint states from the joint state subscriber
     % !! Note that the original order is 3-2-1-4-5-6 !!
@@ -351,14 +351,14 @@ function[currJointState] = getCurrentState(obj)
     currJointState = [currJointState(3:-1:1),currJointState(4:6)];
 end
 
-%> CREATE TRANSMISSION TO SEND TO ROBOT
+%% CREATE TRANSMISSION TO SEND TO ROBOT
 function[goal] = createTransmission(obj,duration, goal)
     
     %Get current state and add to start of transmission
-    [currJointState] = getCurrentState(obj.jointStateSubscriber);
+    [currJointState] = obj.getCurrentState();
     jointSend = rosmessage('trajectory_msgs/JointTrajectoryPoint');
     jointSend.Positions = currJointState;
-    jointSend.TimeFromStart = 0.5;
+    jointSend.TimeFromStart = rosduration(0.5);
     goal.Trajectory.Points = [goal.Trajectory.Points];
     
     % Set time stamp for next position
@@ -386,8 +386,8 @@ function[goal] = createTransmission(obj,duration, goal)
     
 end
 
-%> TRANSMIT THE ACTION TO THE ROBOT
-function sendTransmission(client,goal)
+%% TRANSMIT THE ACTION TO THE ROBOT
+function sendTransmission(obj,client,goal)
     % Send the generated real trajectory (in "goal")
     sendGoal(client,goal);
     clear goal
@@ -402,13 +402,16 @@ end
 
 %% CONNECT TO HUMAN DETECTION
 function connectHuman(obj, Sensor)
-    obj.humanSub = rossubscriber(Sensor.humanPub.TopicName, @obj.dummy);
+    try 
+        obj.humanSub = rossubscriber(Sensor.humanPub.TopicName, @obj.dummy);
+    catch
+        display("Could not connect to human detection camera")
+    end
 end 
 
 %% FUNCTION THAT 
 function dummy(obj,~,message)
    
-%     display(message.Data);
     if strcmp('false', message.Data)
         obj.humanSafe = true;
     else
