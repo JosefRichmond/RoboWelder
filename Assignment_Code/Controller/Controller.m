@@ -342,7 +342,7 @@ function [client, goal,jointStateSubscriber, jointNames] = InitialiseReal(obj)
 
 end
 
-%> COLLECT CURRENT STATE
+%% COLLECT CURRENT STATE
 function[currJointState] = getCurrentState(obj)
     % Pull current joint states from the joint state subscriber
     % !! Note that the original order is 3-2-1-4-5-6 !!
@@ -351,7 +351,7 @@ function[currJointState] = getCurrentState(obj)
     currJointState = [currJointState(3:-1:1),currJointState(4:6)];
 end
 
-%> CREATE TRANSMISSION TO SEND TO ROBOT
+%% CREATE TRANSMISSION TO SEND TO ROBOT
 function[goal] = createTransmission(obj,duration, goal)
     
     %Get current state and add to start of transmission
@@ -386,7 +386,7 @@ function[goal] = createTransmission(obj,duration, goal)
     
 end
 
-%> TRANSMIT THE ACTION TO THE ROBOT
+%% TRANSMIT THE ACTION TO THE ROBOT
 function sendTransmission(obj,client,goal)
     % Send the generated real trajectory (in "goal")
     sendGoal(client,goal);
@@ -402,13 +402,16 @@ end
 
 %% CONNECT TO HUMAN DETECTION
 function connectHuman(obj, Sensor)
-    obj.humanSub = rossubscriber(Sensor.humanPub.TopicName, @obj.dummy);
+    try 
+        obj.humanSub = rossubscriber(Sensor.humanPub.TopicName, @obj.dummy);
+    catch
+        display("Could not connect to human detection camera")
+    end
 end 
 
 %% FUNCTION THAT 
 function dummy(obj,~,message)
    
-%     display(message.Data);
     if strcmp('false', message.Data)
         obj.humanSafe = true;
     else
