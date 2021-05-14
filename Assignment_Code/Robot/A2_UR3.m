@@ -47,11 +47,11 @@ function GetUR3Robot(self)
         name = ['UR_3_',datestr(now,'yyyymmddTHHMMSSFFF')];
 %     end
 
-    L1 = Link('d',0.1519, 'a',0,        'alpha',pi/2, 'offset',0,'qlim',[deg2rad(-360),deg2rad(360)]);
-    L2 = Link('d',0,      'a',-0.24365, 'alpha',0,    'offset',0,'qlim',[deg2rad(-90),deg2rad(90)]);    % -pi/2
-    L3 = Link('d',0,      'a',-0.21325, 'alpha',0,    'offset',0,'qlim',[deg2rad(-170),deg2rad(170)]);
-    L4 = Link('d',0.11235,'a',0,        'alpha',pi/2, 'offset',0,'qlim',[deg2rad(-360),deg2rad(360)]);  % -pi/2
-    L5 = Link('d',0.08535,'a',0,        'alpha',-pi/2,'offset',0,'qlim',[deg2rad(-360),deg2rad(360)]);
+    L1 = Link('d',0.1519, 'a',0,        'alpha',pi/2, 'offset',0,'qlim',[deg2rad(0),deg2rad(360)]);
+    L2 = Link('d',0,      'a',-0.24365, 'alpha',0,    'offset',0,'qlim',[deg2rad(-180),deg2rad(0)]);    % -pi/2
+    L3 = Link('d',0,      'a',-0.21325, 'alpha',0,    'offset',0,'qlim',[deg2rad(-140),deg2rad(140)]);
+    L4 = Link('d',0.11235,'a',0,        'alpha',pi/2, 'offset',0,'qlim',[deg2rad(-340),deg2rad(340)]);  % -pi/2
+    L5 = Link('d',0.08535,'a',0,        'alpha',-pi/2,'offset',0,'qlim',[deg2rad(-340),deg2rad(340)]);
     L6 = Link('d',0.0819, 'a',0,        'alpha',0,    'offset',0,'qlim',[deg2rad(-360),deg2rad(360)]);
 
     self.model = SerialLink([L1 L2 L3 L4 L5 L6],'name',name);

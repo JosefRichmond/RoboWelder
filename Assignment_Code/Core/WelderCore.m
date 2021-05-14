@@ -57,44 +57,26 @@ function initialiseEnvironment(obj, loadEnvironment)
     % planningSCene
     
     planningScene = {};
-    
-    planningScene{1}.vertex = vertex;
-    planningScene{1}.faces = faces;  
-    planningScene{1}.faceNormals = faceNormals;
-    
-    obj.planningScene = planningSCene;
-        
-%     centerpnt = [0,0,-1.01];
-%     side = 2;
-%     plotOptions.plotFaces = true;
-%     [vertex,faces,faceNormals] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,[0,0,1],plotOptions);
-% 
-      
-%     planningScene{1}.vertex = vertex;
-%     planningScene{1}.faces = faces;
-%     planningScene{1}.faceNormals = faceNormals; 
-
-%     centerpnt = [0,0.94,0.5];
-%     side = 1;
-%     [v1,v2,v3] = RectangularPrism(centerpnt-side/2, centerpnt+side/2,[1,0,0],plotOptions);
-% 
-%     planningScene{2}.vertex = v1;
-%     planningScene{2}.faces = v2;
-%     planningScene{2}.faceNormals = v3;
 %     
-%     obj.PlanningScene = planningScene;
-    % 
+%     planningScene{1}.vertex = vertex;
+%     planningScene{1}.faces = face;  
+%     planningScene{1}.faceNormals = faceNormals;
+    
+    obj.PlanningScene = planningScene;
+        
 end
 %%
 function initialiseSensor(obj, sim, display)
     
-    obj.Sensor = CustomSensor(sim);
-    if obj.sim
-%     obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
-    else
-       obj.Sensor.initialiseHumanDetection(1, '/camera/depth_registered/points', '/Sensor/Human', display);
-       obj.Sensor.setupCamera('/camera/depth_registered/points')
-    end 
+    obj.Sensor = CustomSensor(true);
+    obj.Sensor.initialiseHumanDetection(1, '/camera/rgb/image_raw', '/Sensor/Human', display);
+
+%     if sim
+%      obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
+%     else
+%        obj.Sensor.initialiseHumanDetection(1, '/camera/depth_registered/points', '/Sensor/Human', display);
+% %        obj.Sensor.setupCamera('/camera/depth_registered/points')
+%     end 
     
 end
 
@@ -117,7 +99,6 @@ end
 %%
 function planTrajectory(obj)
     
-%     obj.Controller.makeTrajectory(double(obj.Target(1:10:length(obj.Target),:)));
     obj.Controller.makeTrajectory(double(obj.Target));
 
 end
@@ -128,6 +109,13 @@ function runTrajectory(obj)
    obj.Controller.connectHuman(obj.Sensor);
    obj.Controller.startMovement();
    
+end 
+%%
+function eStop(obj)
+    if ~isempty(obj.Controller)
+        display("eStop Pressed");
+        obj.Controller.eStopSafe = ~obj.Controller.eStopSafe;
+    end 
 end 
 
     end
