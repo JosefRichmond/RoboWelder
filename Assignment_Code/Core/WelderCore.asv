@@ -40,7 +40,7 @@ function initialiseEnvironment(obj, loadEnvironment)
     %   Detailed explanation goes here
     
     % Load welding cell and respective safety models
-    [enviro,face,vertex] = A2Environment();
+    [face,vertex] = A2Environment();
     hold on
     
     % Get faceNormals data from the A2 Environment outputs
@@ -88,9 +88,9 @@ end
 %%
 function initialiseSensor(obj, sim, display)
     
-    obj.Sensor = CustomSensor(sim);
+%     obj.Sensor = CustomSensor(sim);
     if obj.sim
-%     obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
+    obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
     else
        obj.Sensor.initialiseHumanDetection(1, '/camera/depth_registered/points', '/Sensor/Human', display);
        obj.Sensor.setupCamera('/camera/depth_registered/points')

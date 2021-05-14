@@ -14,6 +14,7 @@ myCore = WelderCore(true);
 
 %% LOAD ROBOT INTO FIGURE
 myCore.initialiseRobot();
+hold on
 
 %% LOAD ENVIRONMENT
 myCore.initialiseEnvironment()

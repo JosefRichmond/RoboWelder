@@ -26,8 +26,7 @@ goal.Trajectory.Header.Seq = 1;
 goal.Trajectory.Header.Stamp = rostime('Now','system');
 goal.GoalTimeTolerance = rosduration(0.05);
 
-bufferSeconds = 1; % This allows for the time taken to send the message. If the network is fast, this could be reduced.
-durationSeconds = 20; % This is how many seconds the movement will take
+durationSeconds = 10; % This is how many seconds the movement will take
 
 currJointState = (jointStateSubscriber.LatestMessage.Position)';
 currJointState = [currJointState(3:-1:1),currJointState(4:6)];

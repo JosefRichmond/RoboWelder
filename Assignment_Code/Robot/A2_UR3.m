@@ -10,7 +10,7 @@ classdef A2_UR3 < handle
         model;
         
         %> Workspace dimensions
-        workspace = [-2 2 -2 2 -0.3 2];   
+        workspace = [-1.5 1.5 -1.5 1.5 -0.8 2];   
         
         %> Flag to indicate if gripper is used
         useGripper = false;     

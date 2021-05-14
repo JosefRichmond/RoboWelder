@@ -18,7 +18,7 @@ RoboWelder = UR3('test', transl(0.75,0,0.5), false,log);
 close all
 
 %% Load Environment
-weldEnvironment = A2Environment ([-5 5 -5 5 0 5]);
+weldEnvironment = A2Environment ();
 hold on
 
 %myEnvironment.LoadEquipment
