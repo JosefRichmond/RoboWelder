@@ -59,10 +59,10 @@ function initialiseEnvironment(obj, loadEnvironment)
     planningScene = {};
     
     planningScene{1}.vertex = vertex;
-    planningScene{1}.faces = faces;  
+    planningScene{1}.faces = face;  
     planningScene{1}.faceNormals = faceNormals;
     
-    obj.planningScene = planningSCene;
+    obj.PlanningScene = planningScene;
         
 %     centerpnt = [0,0,-1.01];
 %     side = 2;
@@ -90,7 +90,7 @@ function initialiseSensor(obj, sim, display)
     
     obj.Sensor = CustomSensor(sim);
     if obj.sim
-%     obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
+       obj.Sensor.initialiseHumanDetection(1, '/usb_cam/image_raw/compressed', '/Sensor/Human', display);
     else
        obj.Sensor.initialiseHumanDetection(1, '/camera/depth_registered/points', '/Sensor/Human', display);
        obj.Sensor.setupCamera('/camera/depth_registered/points')
