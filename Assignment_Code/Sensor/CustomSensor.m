@@ -195,7 +195,7 @@ function cData = detectCracks(obj, displayCracks)
     rotpostrimmat = cell2mat(rotpostrim);
     
     if obj.sim
-        rotpostrimmat = rotpostrimmat + [0.2,-0.5,-0.1];
+        rotpostrimmat = rotpostrimmat + [0.2,-0.3,-0.1];
     end 
     
     figure()
@@ -215,7 +215,7 @@ function cData = detectCracks(obj, displayCracks)
     
     
     figure()
-    robot = UR5;
+    robot = A2_UR3(false,true);
     robot.model.animate(deg2rad([-180,0,0,0,-180,0]))
     hold on
     trplot(transl(0,0,0))  

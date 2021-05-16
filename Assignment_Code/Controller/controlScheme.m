@@ -10,20 +10,19 @@
 % Run - roslaunch usb_cam usb_cam-test.launch
 
 %% INITIALISE CORE & ROS
-myCore = WelderCore(true);
-
-%% LOAD ROBOT INTO FIGURE
-myCore.initialiseRobot();
-hold on
+myCore = WelderCore(false);
 
 %% LOAD ENVIRONMENT
 myCore.initialiseEnvironment()
 
+%% LOAD ROBOT INTO FIGURE
+myCore.initialiseRobot();
+
 %% LOAD UP, FIRST ARGUMENT MEANS SIMULATED OR NOT, LEAVE AS TRUE SO WE DON'T HAVE TO CONNECT TO REAL CAMS
-myCore.initialiseSensor(true,true)
+myCore.initialiseSensor(false,true)
 
 %% LOAD CONTROLLER, FIRST ARGUMENT MEANS SIMULATED OR NOT
-myCore.initialiseController(true)
+myCore.initialiseController(false)
 
 %% GETS THE TARGETS FROM ROSBAG
 myCore.getTargets()
@@ -31,11 +30,13 @@ myCore.getTargets()
 %% PLANS AND PLOTS TRAJECTORY
 myCore.planTrajectory()
 
+
 %% EITHER RUNS THE SIMULATED VERSION OR SENDS THE MSG TO ROS
 myCore.runTrajectory()
 
 %% CALL THIS TO SHUT DOWN ALL PROCESSES BEFORE YOU MAKE A NEW CORE 
 myCore.Controller.stopMovement()
 myCore.Sensor.deactivateHumanDetection()
+%%
 close all
 clear
