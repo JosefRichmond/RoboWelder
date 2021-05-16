@@ -30,7 +30,6 @@ myCore.getTargets()
 %% PLANS AND PLOTS TRAJECTORY
 myCore.planTrajectory()
 
-
 %% EITHER RUNS THE SIMULATED VERSION OR SENDS THE MSG TO ROS
 myCore.runTrajectory()
 

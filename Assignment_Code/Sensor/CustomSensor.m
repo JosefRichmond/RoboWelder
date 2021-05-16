@@ -25,31 +25,25 @@ end
 
 methods
 %% Object Constructor
-
 function obj = CustomSensor(Sim)
 %SENSOR Construct an instance of this class
-%   Does nothing but construct the object at the moment, could add in
-%   initialisation here or some toggles for features like monitoring for
-%   humans
+%   Does nothing but construct the object at the moment and save the
+%   boolean indicating simulation or not
 
 % Kinect pub = /camera/depth_registered/points
 % /usb_cam/image_raw/compressed
-
 % Kinect launch = roslaunch freenect_launch freenect.launch depth_registration:=true
 
 obj.sim = Sim;
 
 end
-%% Initialise Human Detection
 
+%% Initialise Human Detection
 function initialiseHumanDetection(obj,rate, cameraNode, pubName, displayFace)
 %INITIALISEHUMANDETECTION
 %   Creates the face detection object, and sets up the subscriber to the
 %   camera node. Then creates a timer, with a fixedRate mode of operation
 %   that calls the face detection function at the specified rate. 
-%   PARAMETERS
-%       rate - Rate at which workspace is checked for faces (Hz)
-%       cameraNode - Name of node sending camera footage
     
     % Create face detector and subscribers
     obj.faceDetector = vision.CascadeObjectDetector();
@@ -67,8 +61,8 @@ function initialiseHumanDetection(obj,rate, cameraNode, pubName, displayFace)
     start(obj.faceDetectorTimer);
     
 end
-%% Face Detection Callback Function  
 
+%% Face Detection Callback Function  
 function detectFaces(obj,~, ~, display)
 %DETECTFACES Detects faces from camera footage
 %   Function that detects faces using camera footage from the specified
@@ -78,19 +72,28 @@ function detectFaces(obj,~, ~, display)
 %   to the /sensor/human topic indicating if a human has been detected or
 %   not. 
    
+    % Receives a message from the camera node
     msg = obj.humanSub.receive(10);
     img = readImage(msg);
+    
+    % Detects faces and returns location of corners of a square that
+    % surrounds that face
     loc = step(obj.faceDetector, img);
+    
+    % Creates new message
     outMsg = rosmessage(obj.humanPub);
     
+    % True if face detected, false otherwise
     if isempty(loc)
         outMsg.data = 'false';
     else
         outMsg.data = 'true';
     end
     
+    % Publish the true/false message
     send(obj.humanPub,outMsg);
     
+    % Display the camera feed w/ faces surrounded by bounding boxes
     if display
         
         if isempty(obj.showFig)
@@ -105,8 +108,8 @@ function detectFaces(obj,~, ~, display)
     end 
     
 end
-%% Deactivate Human Detection
 
+%% Deactivate Human Detection
 function deactivateHumanDetection(obj)
 %DEACTIVATEHUMANDETECTION Stops face detection process
 %   Stops face detection process by deleting the timer triggering the
@@ -119,8 +122,8 @@ function deactivateHumanDetection(obj)
         disp('Could not shutdown face detection routine, check timer still exists')
     end
 end 
-%% Crack Detection Initialisation
 
+%% Crack Detection Initialisation
 function setupCamera(obj, nodeName)
 % SETUPCAMERA Sets up a fake camera publisher to replicate input from an
 % RGB-D camera
@@ -131,7 +134,6 @@ function setupCamera(obj, nodeName)
 end
 
 %% Crack Detection Function
-
 function cData = detectCracks(obj, displayCracks)
 % DETECTCRACKS Uses a neural network to detect cracks
 %   Currently performs image segmentation using a resnet trained via
@@ -177,27 +179,30 @@ function cData = detectCracks(obj, displayCracks)
     % Plots the detected cracks
     [l1,l2] = bwlabel(skelImage);
     cData = {};
-       
+    
+    % Overlay the detected cracks onto the original images
     figure()
     overlay = rgb2gray(img);
     overlay(skelImage) = 255;
     imshow(overlay)
  
-    xs = xyz(:,1);
-    ys = xyz(:,2);
-
-    zs = xyz(:,3);
-
-    pos = arrayfun(@transl, xs, ys, zs, 'UniformOutput', false);
-
+    % Converts the xyz coordinates into 4x4 transforms
+    pos = arrayfun(@transl, xyz(:,1), xyz(:,2), xyz(:,3), 'UniformOutput', false);
+    
+    % Rotate and translate to get data into robot base frame
     rotpos = cellfun(@(p) trotx(-pi/2)*transl(0,-0.5,0)*p,pos,'un',0);
     rotpostrim = cellfun(@(rotposl) rotposl(1:3,4)',rotpos,'un',0);
     rotpostrimmat = cell2mat(rotpostrim);
     
+    % If using the simulated data, just centre on robot base frame to make
+    % things easier to debug and visualise
     if obj.sim
         rotpostrimmat = rotpostrimmat + [0.2,-0.3,-0.1];
     end 
     
+    % For each detected crack find the major points and append to a cell
+    % array. If display is requested, display the skeleton image of the
+    % cracks
     figure()
     for i =1:l2
         r1 = skelImage;
@@ -212,8 +217,7 @@ function cData = detectCracks(obj, displayCracks)
         cData{i} = rotpostrimmat(eP,:);
     end
     
-    
-    
+    % Plot the robot and the RGB-D data
     figure()
     robot = A2_UR3(false,true);
     robot.model.animate(deg2rad([-180,0,0,0,-180,0]))
@@ -222,13 +226,12 @@ function cData = detectCracks(obj, displayCracks)
     scatter3(rotpostrimmat(:,1),rotpostrimmat(:,2) ,rotpostrimmat(:,3)  , 1 , rgb);
     
 
-    % Need to check cData for NaNs 
-
 end
 
 %% Object Destructor
-
 function delete(obj)
+    % Attempts to stop the face detection service and resets the output
+    % plot to empty
     try
         obj.faceDetectorTimer.stop();
         obj.showFig = [];

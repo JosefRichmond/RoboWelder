@@ -6,17 +6,6 @@ train_msk_dir =  fullfile("/", "media", "josef", "UUI","crack_segmentation_datas
 test_img_dir = fullfile("/", "media", "josef", "UUI","crack_segmentation_dataset","val","images");
 test_msk_dir =  fullfile("/", "media", "josef", "UUI","crack_segmentation_dataset","val","masks");
 
-% fGhttps://www.mathworks.com/help/vision/ug/semantic-segmentation-using-deep-learning.html
-
-%% Test and Training Datasets
-% 
-train_img = imageDatastore(train_img_dir);
-train_msk = imageDatastore(train_msk_dir);
-
-test_img = imageDatastore(test_img_dir);
-test_msk = imageDatastore(test_msk_dir);
-
-
 %%
 
 classNames=  ["Crack" "NoCrack"];
@@ -30,12 +19,6 @@ train_msk = pixelLabelDatastore(train_msk_dir, classNames, pixelLabelID);
 test_img = imageDatastore(test_img_dir);
 test_msk = pixelLabelDatastore(test_msk_dir, classNames, pixelLabelID);
 
-%%
-% 
-% for i =1:500
-%     img = readimage(train_msk,i);
-%     unique(img)
-% end 
 
 %% Load an image & overlay its mask
 
@@ -102,65 +85,10 @@ options = trainingOptions('sgdm', ...
 
 dsTrain = combine(train_img, train_msk);
 dsTrain = transform(dsTrain, @(data)blk(data,1));
-%  xTrans = [-10 10];
-% yTrans = [-10 10];
-% dsTrain = transform(dsTrain, @(data)augmentImageAndLabel(data,xTrans,yTrans));
+
 
 %% Train Network
 
 [net, info] = trainNetwork(dsTrain,lgraph,options);
 
-%% Test Network
-% subplot(2,2,1)
-net = load('network');
-net = net.net
 
-I = readimage(test_img,2);
-C = semanticseg(I,net);
-B = labeloverlay(I,C);
-bw = ones(448,448);
-bw(C == "Crack") = 1;
-bw(C == "NoCrack") = 0;
-bw = imbinarize(bw);
-skelImage = bwskel(bw, 'MinBranchLength', 10); % First guess.  Strangely bwskel() doesn't seem to have any short spurs, no matter what MinBranchLength is.
-% imshow(skelImage)
-
-[l1,l2] = bwlabel(skelImage);
-
-for i =1:l2
-    subplot(1,l2+1,i+1)
-    r1 = skelImage;
-    r1(l1 ~= i) = 0;
-    imshow(r1);
-end 
-
-subplot(1,l2+1,1)
-imshow(skelImage);
-% 
-% subplot(2,2,2);
-% r1 = skelImage;
-% r1(l1 ~= 1) = 0;
-% binaryImage = bwmorph(bw, 'skel', inf');
-% measurements = regionprops(binaryImage, 'Area')
-
-
-%% 
-
-figure()% I = readimage(test_img,2);
-I =cat(3,skelImage,skelImage*5,skelImage*10);
-C = semanticseg(I,net);
-B = labeloverlay(I,C);
-bw = ones(448,448);
-bw(C == "Crack") = 1;
-bw(C == "NoCrack") = 0;
-bw = imbinarize(bw);
-imshow(B)
-% skelImage = bwskel(bw, 'MinBranchLength', 10); % First guess.  Strangely bwskel() doesn't seem to have any short spurs, no matter what MinBranchLength is.
-% imshow(skelImage)
-%%
-
-function out = blk(data, l)
-label = data{2};
-label(isundefined(label)) = "Crack";
-out = {data{1},label};
-end 
